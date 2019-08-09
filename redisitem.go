@@ -45,7 +45,6 @@ func NewRedis(address string) Redis {
 /*
 	Primary Redis holding structure.
 	Meets radix.Client interface.
-	Designed to extend off of for Key, Map, and Distinct.
 */
 type Redis struct {
 	Client* radix.Cluster
@@ -63,7 +62,10 @@ func (r Redis) GetID() string {
 	return r.Id
 }
 func (r Redis) Key(key string) RedisItem {
-	return Redis {r.Client, r.GetID() + "." + key}
+	if(r.GetID() != "") {
+		return Redis {r.Client, r.GetID() + "." + key}
+	}
+	return Redis {r.Client, key}
 }
 
 func (k Redis) Get() string {
