@@ -28,13 +28,14 @@ type RedisItem interface {
 }
 
 func NewRedis(address string) Redis {
-	var clusterAddress string
+	var totalAddress string
 	if(strings.Contains(address, ":")) {
-		clusterAddress = address
+		totalAddress = address
 	} else {
-		clusterAddress = address + ":6379"
+		totalAddress = address + ":6379"
 	}
-	redis, err := radix.NewCluster([]string{"tcp://" + clusterAddress})
+	fmt.Println("Connecting to " + totalAddress)
+	redis, err := radix.NewPool("tcp", totalAddress, 10)
 	if(err != nil) {
 		fmt.Printf("Cannot connect to Redis: %s\n", err)
 		panic(err)
@@ -47,7 +48,7 @@ func NewRedis(address string) Redis {
 	Meets radix.Client interface.
 */
 type Redis struct {
-	Client* radix.Cluster
+	Client* radix.Pool
 	Id string
 }
 
@@ -133,7 +134,7 @@ func (m Redis) KeyValNX(k string, v string) int {
 
 func (s Redis) Has(value string) bool {
 	var val int
-	err := s.Do(radix.Cmd(&value, "SISMEMBER", s.Id))
+	err := s.Do(radix.Cmd(&val, "SISMEMBER", s.Id, value))
 	if(err != nil) {
 		fmt.Printf("CANNOT GET SET VALUES: %s\n", s.Id)
 		panic(err)
@@ -168,7 +169,7 @@ func (s Redis) Rem(val string) {
 func (s Redis) Establish(val string) RedisItem {
 	err := s.Do(radix.Cmd(nil, "SADD", s.Id, val))
 	if(err != nil) {
-		fmt.Printf("CANNOT ADD TO SET: %s %s\n", s.Id, val)
+		fmt.Printf("CANNOT ESTABLISH TO SET: %s %s\n", s.Id, val)
 		panic(err)
 	}
 	return Redis {s.Client, s.Id + "." + val}
